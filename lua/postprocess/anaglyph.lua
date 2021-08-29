@@ -1,13 +1,16 @@
-local mat_leftE = CreateMaterial("pp/anaglyphleft", "UnlitGeneric", {
-	["$fbtexture"] = "_rt_FullFrameFB",
+local width, height = ScrW(), ScrH()
+local tex_left = GetRenderTargetEx("_rt_AnaglyphLeft", width, height, RT_SIZE_FULL_FRAME_BUFFER, MATERIAL_RT_DEPTH_SEPARATE, 258, CREATERENDERTARGETFLAGS_HDR, IMAGE_FORMAT_BGR888)
+local tex_Right = GetRenderTargetEx("_rt_AnaglyphRight", width, height, RT_SIZE_FULL_FRAME_BUFFER, MATERIAL_RT_DEPTH_SEPARATE, 258, CREATERENDERTARGETFLAGS_HDR, IMAGE_FORMAT_BGR888)
+local mat_left = CreateMaterial("pp/anaglyphleft", "UnlitGeneric", {
+	["$fbtexture"] = "_rt_AnaglyphLeft",
 	["$ignorez"] = "1"
 })
-local mat_rightE = CreateMaterial("pp/anaglyphleft", "UnlitGeneric", {
-	["$fbtexture"] = "_rt_FullFrameFB1",
+local mat_right = CreateMaterial("pp/anaglyphleft", "UnlitGeneric", {
+	["$fbtexture"] = "_rt_AnaglyphRight",
 	["$ignorez"] = "1"
 })
-mat_leftE:SetTexture( "$fbtexture", render.GetScreenEffectTexture() )
-mat_rightE:SetTexture( "$fbtexture", render.GetScreenEffectTexture(1) )
+mat_left:SetTexture( "$fbtexture", tex_left )
+mat_right:SetTexture( "$fbtexture", tex_right )
 --[[---------------------------------------------------------
 	Register the convars that will control this effect
 -----------------------------------------------------------]]
