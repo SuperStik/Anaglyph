@@ -1,6 +1,6 @@
 local width, height = ScrW(), ScrH()
-local tex_left = GetRenderTargetEx("_rt_AnaglyphLeft", width, height, RT_SIZE_FULL_FRAME_BUFFER, MATERIAL_RT_DEPTH_SEPARATE, 258, CREATERENDERTARGETFLAGS_HDR, IMAGE_FORMAT_BGR888)
-local tex_Right = GetRenderTargetEx("_rt_AnaglyphRight", width, height, RT_SIZE_FULL_FRAME_BUFFER, MATERIAL_RT_DEPTH_SEPARATE, 258, CREATERENDERTARGETFLAGS_HDR, IMAGE_FORMAT_BGR888)
+local tex_left = GetRenderTargetEx("_rt_AnaglyphLeft", width, height, RT_SIZE_FULL_FRAME_BUFFER, MATERIAL_RT_DEPTH_SEPARATE, 258, 0, IMAGE_FORMAT_BGR888)
+local tex_right = GetRenderTargetEx("_rt_AnaglyphRight", width, height, RT_SIZE_FULL_FRAME_BUFFER, MATERIAL_RT_DEPTH_SEPARATE, 258, 0, IMAGE_FORMAT_BGR888)
 local mat_left = CreateMaterial("pp/anaglyphleft", "UnlitGeneric", {
 	["$fbtexture"] = "_rt_AnaglyphLeft",
 	["$ignorez"] = "1"
@@ -9,8 +9,8 @@ local mat_right = CreateMaterial("pp/anaglyphleft", "UnlitGeneric", {
 	["$fbtexture"] = "_rt_AnaglyphRight",
 	["$ignorez"] = "1"
 })
-mat_left:SetTexture( "$fbtexture", tex_left )
-mat_right:SetTexture( "$fbtexture", tex_right )
+mat_left:SetTexture( "$basetexture", tex_left )
+mat_right:SetTexture( "$basetexture", tex_right )
 --[[---------------------------------------------------------
 	Register the convars that will control this effect
 -----------------------------------------------------------]]
@@ -21,20 +21,31 @@ local pp_anaglyph_size = CreateClientConVar( "pp_anaglyph_size", "6", true, fals
 	Can be called from engine or hooks using bloom.Draw
 -----------------------------------------------------------]]
 function RenderAnaglyph( ViewOrigin, ViewAngles )
-
-	render.UpdateScreenEffectTexture()
-
 	local Right = ViewAngles:Right() * pp_anaglyph_size:GetFloat()
 
 	local view = {origin = ViewOrigin + Right, angles = ViewAngles}
+	local w, h = ScrW(), ScrH()
 
-	-- Left
+	-- Left RenderTarget
+	render.PushRenderTarget(tex_left)
 	render.RenderView( view )
+	render.PopRenderTarget()
 
-	-- Right
+	-- Right RenderTarget
+	render.PushRenderTarget(tex_right)
 	view.origin = ViewOrigin - Right
 	render.RenderView( view )
+	render.PopRenderTarget()
 
+	-- Left Draw
+	surface.SetMaterial(mat_left)
+	surface.SetDrawColor(255, 0, 0)
+	surface.DrawTexturedRect(0, 0, w, h)
+
+	-- Right Draw
+	surface.SetMaterial(mat_right)
+	surface.SetDrawColor(0, 0, 255, 127)
+	surface.DrawTexturedRect(0, 0, w, h)
 end
 
 --[[---------------------------------------------------------
@@ -47,7 +58,7 @@ hook.Add( "RenderScene", "RenderAnaglyph", function( ViewOrigin, ViewAngles )
 	RenderAnaglyph( ViewOrigin, ViewAngles )
 
 	-- Return true to override drawing the scene
-	return true
+	return false
 
 end )
 
