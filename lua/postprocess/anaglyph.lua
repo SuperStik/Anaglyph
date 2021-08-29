@@ -1,16 +1,23 @@
 local width, height = ScrW(), ScrH()
-local tex_left = GetRenderTargetEx("_rt_AnaglyphLeft", width, height, RT_SIZE_FULL_FRAME_BUFFER, MATERIAL_RT_DEPTH_SEPARATE, 258, 0, IMAGE_FORMAT_BGR888)
-local tex_right = GetRenderTargetEx("_rt_AnaglyphRight", width, height, RT_SIZE_FULL_FRAME_BUFFER, MATERIAL_RT_DEPTH_SEPARATE, 258, 0, IMAGE_FORMAT_BGR888)
+local tex_left = GetRenderTargetEx("_rt_AnaglyphLeft", width, height, RT_SIZE_NO_CHANGE, MATERIAL_RT_DEPTH_SEPARATE, 258, 0, IMAGE_FORMAT_BGR888)
+local tex_right = GetRenderTargetEx("_rt_AnaglyphRight", width, height, RT_SIZE_NO_CHANGE, MATERIAL_RT_DEPTH_SEPARATE, 258, 0, IMAGE_FORMAT_BGR888)
+local tex_anaglyph = GetRenderTarget("_rt_Anaglyph", width, height, RT_SIZE_NO_CHANGE, MATERIAL_RT_DEPTH_SEPARATE, 258, 0, IMAGE_FORMAT_BGR888)
 local mat_left = CreateMaterial("pp/anaglyphleft", "UnlitGeneric", {
-	["$fbtexture"] = "_rt_AnaglyphLeft",
+	["$basetexture"] = "_rt_AnaglyphLeft",
 	["$ignorez"] = "1"
 })
-local mat_right = CreateMaterial("pp/anaglyphleft", "UnlitGeneric", {
-	["$fbtexture"] = "_rt_AnaglyphRight",
+local mat_right = CreateMaterial("pp/anaglyphright", "UnlitGeneric", {
+	["$basetexture"] = "_rt_AnaglyphRight",
 	["$ignorez"] = "1"
 })
+local mat_anaglyph = CreateMaterial("pp/anaglyph", "UnlitGeneric", {
+	["$basetexture"] = "_rt_Anaglyph",
+	["$ignorez"] = "1"
+})
+
 mat_left:SetTexture( "$basetexture", tex_left )
 mat_right:SetTexture( "$basetexture", tex_right )
+mat_anaglyph:SetTexture("$basetexture", tex_anaglyph)
 --[[---------------------------------------------------------
 	Register the convars that will control this effect
 -----------------------------------------------------------]]
@@ -37,15 +44,24 @@ function RenderAnaglyph( ViewOrigin, ViewAngles )
 	render.RenderView( view )
 	render.PopRenderTarget()
 
+	-- Anaglyph Draw
+	render.PushRenderTarget(tex_anaglyph)
+
 	-- Left Draw
 	surface.SetMaterial(mat_left)
 	surface.SetDrawColor(255, 0, 0)
 	surface.DrawTexturedRect(0, 0, w, h)
+	surface.DrawRect(0, 0, 128, 128) -- debugging
 
 	-- Right Draw
 	surface.SetMaterial(mat_right)
 	surface.SetDrawColor(0, 0, 255, 127)
 	surface.DrawTexturedRect(0, 0, w, h)
+	surface.DrawRect(128, 128, 128, 128) -- debugging
+	render.PopRenderTarget()
+
+	render.SetMaterial(mat_anaglyph)
+	render.DrawScreenQuad()
 end
 
 --[[---------------------------------------------------------
@@ -58,7 +74,7 @@ hook.Add( "RenderScene", "RenderAnaglyph", function( ViewOrigin, ViewAngles )
 	RenderAnaglyph( ViewOrigin, ViewAngles )
 
 	-- Return true to override drawing the scene
-	return false
+	return true
 
 end )
 
